@@ -1,12 +1,17 @@
 package main
 
 import (
-	"fmt"
+	// "encoding/base64"
+	// "fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	// "time"
+
+	"github.com/teris-io/shortid"
 )
 
 type Config struct {
@@ -29,15 +34,25 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func get_id() func() int {
-	id := 0
-	return func() int {
-		id++
-		return id
-	}
-}
+// func get_id() func() int {
+// 	id := 0
+// 	return func() int {
+// 		id++
+// 		return id
+// 	}
+// }
 
-var next_id = get_id()
+func get_id() string {
+	// TODO: write own unique id filename algorithm
+	// now := time.Now().Unix()
+	// log.Println(now)
+	// encoded := base64.URLEncoding.EncodeToString([]byte(fmt.Sprint(now)))
+	// log.Println(encoded)
+	// return encoded
+	id, _ := shortid.Generate()
+	return id
+
+}
 
 func uploadHandler(w http.ResponseWriter, req *http.Request) {
 
@@ -50,8 +65,7 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 	defer file.Close()
 
 	// Create new file
-	// TODO: unique filename algorithm
-	filename := fmt.Sprint("file-", next_id())
+	filename := get_id()
 
 	dst, err := os.Create(filepath.Join(config.Folder, filename))
 	if err != nil {
@@ -73,7 +87,6 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 func readHandler(w http.ResponseWriter, req *http.Request) {
 	filename := req.URL.Path[1:]
 	path := filepath.Join(config.Folder, filename)
-
 	dat, err := os.ReadFile(path)
 	if err != nil {
 		http.Error(w, "404 - not found", http.StatusNotFound)
