@@ -9,7 +9,25 @@ import (
 	"path/filepath"
 )
 
-var folder = "files"
+type Config struct {
+	Host   string
+	Port   string
+	Folder string
+}
+
+var config = Config{
+	Host:   getEnv("HOST", "localhost"),
+	Port:   getEnv("PORT", "8000"),
+	Folder: getEnv("FOLDER", "files"),
+}
+
+func getEnv(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		log.Println(exists)
+		return value
+	}
+	return fallback
+}
 
 func get_id() func() int {
 	id := 0
@@ -23,7 +41,7 @@ var next_id = get_id()
 
 func uploadHandler(w http.ResponseWriter, req *http.Request) {
 
-	file, handler, err := req.FormFile("file")
+	file, _, err := req.FormFile("file")
 	if err != nil {
 		log.Println("Error Retrieving the File")
 		log.Println(err)
@@ -31,14 +49,11 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	defer file.Close()
 
-	log.Println(file)
-
-	log.Println(handler)
-
 	// Create new file
+	// TODO: unique filename algorithm
 	filename := fmt.Sprint("file-", next_id())
 
-	dst, err := os.Create(filepath.Join(folder, filename))
+	dst, err := os.Create(filepath.Join(config.Folder, filename))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -46,8 +61,7 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 	defer dst.Close()
 
 	// Write file
-	_, err = io.Copy(dst, file)
-	if err != nil {
+	if _, err = io.Copy(dst, file); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -58,11 +72,11 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 
 func readHandler(w http.ResponseWriter, req *http.Request) {
 	filename := req.URL.Path[1:]
-	path := filepath.Join(folder, filename)
+	path := filepath.Join(config.Folder, filename)
 
 	dat, err := os.ReadFile(path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "404 - not found", http.StatusNotFound)
 		return
 	}
 
@@ -71,7 +85,7 @@ func readHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	files, err := os.ReadDir(filepath.Join(folder))
+	files, err := os.ReadDir(filepath.Join(config.Folder))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,11 +96,12 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	log.Printf("%+v\n", config)
+
+	os.RemoveAll(config.Folder) // delete files for testing purposes
 
 	// setup directory for storing files
-	os.RemoveAll(folder) // delete files for testing purposes
-
-	err := os.MkdirAll(folder, os.ModePerm)
+	err := os.MkdirAll(config.Folder, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 	}
