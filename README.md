@@ -12,18 +12,18 @@ docker...
 
 Upload a new file using a `curl` post request containing a `multipart/form-data` file.
 
-```
+```bash
 cat file.txt | curl http://localhost:8000 -F file=@-
 ```
 
 This will return a URL which can then be used to access the file.
 
-```
+```bash
 localhost:8000/qs7kMtNVR
 ```
 
+## Features
 
-## Features 
 - [x] Write files
 - [x] Read files
 - [x] Configuration

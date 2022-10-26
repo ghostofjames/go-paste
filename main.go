@@ -98,19 +98,6 @@ func readHandler(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	//
-	files, err := os.ReadDir(filepath.Join(config.Folder))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, f := range files {
-		io.WriteString(w, fmt.Sprintf("%s\n", f.Name()))
-		// io.WriteString(w, f.Name()+"\n")
-	}
-}
-
 func main() {
 	config = Config{
 		Host:   getEnv("HOST", "localhost"),
@@ -127,7 +114,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/index", indexHandler)
 	http.HandleFunc("/upload", uploadHandler)
 	http.HandleFunc("/", readHandler)
 
