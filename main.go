@@ -1,16 +1,12 @@
 package main
 
 import (
-	// "encoding/base64"
-	// "fmt"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-
-	// "time"
 
 	"github.com/teris-io/shortid"
 )
@@ -31,24 +27,10 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// func get_id() func() int {
-// 	id := 0
-// 	return func() int {
-// 		id++
-// 		return id
-// 	}
-// }
-
-func get_id() string {
+func get_filename() string {
 	// TODO: write own unique id filename algorithm
-	// now := time.Now().Unix()
-	// log.Println(now)
-	// encoded := base64.URLEncoding.EncodeToString([]byte(fmt.Sprint(now)))
-	// log.Println(encoded)
-	// return encoded
 	id, _ := shortid.Generate()
 	return id
-
 }
 
 func uploadHandler(w http.ResponseWriter, req *http.Request) {
@@ -62,9 +44,9 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 	defer file.Close()
 
 	// Get unique filename
-	filename := get_id()
+	filename := get_filename()
 
-	// Create new file
+	// Create new file and write file contents
 	dst, err := os.Create(filepath.Join(config.Folder, filename))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -72,14 +54,13 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	defer dst.Close()
 
-	// Write file
 	if _, err = io.Copy(dst, file); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Return file name
-	io.WriteString(w, filename+"\n")
+	// Return url to access file
+	io.WriteString(w, fmt.Sprintf("http://%s:%s/%s\n", config.Host, config.Port, filename))
 }
 
 func readHandler(w http.ResponseWriter, req *http.Request) {
@@ -95,10 +76,10 @@ func readHandler(w http.ResponseWriter, req *http.Request) {
 
 	// Return file content
 	w.Write(dat)
-
 }
 
 func main() {
+	// Load config
 	config = Config{
 		Host:   getEnv("HOST", "localhost"),
 		Port:   getEnv("PORT", "8000"),
@@ -118,5 +99,5 @@ func main() {
 	http.HandleFunc("/", readHandler)
 
 	log.Printf("Listing for requests at http://%s:%s/", config.Host, config.Port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", config.Host), nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", config.Port), nil))
 }
