@@ -33,11 +33,11 @@ go run .
 
 Configuration can be done using enviromental variables when not using the docker image.
 
-| Enviromental Variable | Description                         | Default     |
-| ------------------    | ------------------------------------| ----------- |
-| HOST                  | Host for the server to listen on    | `localhost` |
-| PORT                  | Port for the serverapp to listen on | `8000`      |
-| FOLDER                | Directory to store pastes           | `files`     |
+| Enviromental Variable | Description                      | Default     |
+| ------------------    | ---------------------------------| ----------- |
+| `HOST`                | Host for the server to listen on | `localhost` |
+| `PORT`                | Port for the server to listen on | `8000`      |
+| `FOLDER`              | Directory to store pastes        | `files`     |
 
 ## Usage
 
