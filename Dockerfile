@@ -1,11 +1,26 @@
-FROM golang:latest
+## Build
+FROM golang:1.16-buster AS build
 
-WORKDIR $GOPATH/src/go-paste
+WORKDIR /app
 
-COPY . . 
+COPY go.mod .
+COPY go.sum .
 
-RUN go build -o main .
+RUN go mod download
+
+COPY *.go .
+
+RUN go build -o /go-paste
+
+## Deploy
+FROM gcr.io/distroless/base-debian10
+
+WORKDIR /
+
+COPY --from=build /go-paste /go-paste
 
 EXPOSE 8000
 
-CMD ./main
+USER nonroot:nonroot
+
+CMD ["./go-paste"]
