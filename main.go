@@ -58,7 +58,7 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Return url to access file
 	io.WriteString(w, fmt.Sprintf("http://%s:%s/%s\n", config.Host, config.Port, filename))
 }
@@ -86,8 +86,6 @@ func main() {
 		Folder: getEnv("FOLDER", "files"),
 	}
 	log.Printf("%+v\n", config)
-
-	os.RemoveAll(config.Folder) // Delete files for testing purposes
 
 	// Setup directory for storing files
 	err := os.MkdirAll(config.Folder, os.ModePerm)
