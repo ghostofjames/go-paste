@@ -1,10 +1,9 @@
 ## Build
-FROM golang:1.16-buster AS build
+FROM golang:1.18.1 AS build
 
 WORKDIR /app
 
-COPY go.mod .
-COPY go.sum .
+COPY go.mod go.sum ./
 
 RUN go mod download
 
@@ -21,6 +20,6 @@ COPY --from=build /go-paste /go-paste
 
 EXPOSE 8000
 
-USER nonroot:nonroot
+# USER nonroot:nonroot
 
 CMD ["./go-paste"]

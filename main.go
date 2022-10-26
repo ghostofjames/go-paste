@@ -58,7 +58,7 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	
 	// Return url to access file
 	io.WriteString(w, fmt.Sprintf("http://%s:%s/%s\n", config.Host, config.Port, filename))
 }

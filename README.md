@@ -6,7 +6,11 @@ This was small project for learning Go.
 
 ## Installation
 
-docker...
+Run using the docker [image](https://).
+
+```bash
+docker run -p <port-on-host>:8000 -v <path-on-host>:/files go-paste
+```
 
 ## Usage
 
