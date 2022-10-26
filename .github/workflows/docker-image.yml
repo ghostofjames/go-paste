@@ -10,11 +10,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Login to GitHub Container Registry
@@ -23,10 +20,9 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build the hello-docker Docker image
+    - name: Build the go-paste Docker image
       run: |
           docker build . --tag ghcr.io/${{ github.repository }}:latest
-          docker run ghcr.io/${{ github.repository }}:latest
           docker push ghcr.io/${{ github.repository }}:latest
 
 
