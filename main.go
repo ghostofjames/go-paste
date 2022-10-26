@@ -3,6 +3,7 @@ package main
 import (
 	// "encoding/base64"
 	// "fmt"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -20,11 +21,7 @@ type Config struct {
 	Folder string
 }
 
-var config = Config{
-	Host:   getEnv("HOST", "localhost"),
-	Port:   getEnv("PORT", "8000"),
-	Folder: getEnv("FOLDER", "files"),
-}
+var config Config
 
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
@@ -56,17 +53,18 @@ func get_id() string {
 
 func uploadHandler(w http.ResponseWriter, req *http.Request) {
 
+	// Get file from request
 	file, _, err := req.FormFile("file")
 	if err != nil {
-		log.Println("Error Retrieving the File")
-		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
 
-	// Create new file
+	// Get unique filename
 	filename := get_id()
 
+	// Create new file
 	dst, err := os.Create(filepath.Join(config.Folder, filename))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -85,35 +83,45 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func readHandler(w http.ResponseWriter, req *http.Request) {
+	// Read filename from path
 	filename := req.URL.Path[1:]
-	path := filepath.Join(config.Folder, filename)
-	dat, err := os.ReadFile(path)
+
+	// Read file
+	dat, err := os.ReadFile(filepath.Join(config.Folder, filename))
 	if err != nil {
 		http.Error(w, "404 - not found", http.StatusNotFound)
 		return
 	}
 
+	// Return file content
 	w.Write(dat)
 
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
+	//
 	files, err := os.ReadDir(filepath.Join(config.Folder))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, f := range files {
-		io.WriteString(w, f.Name()+"\n")
+		io.WriteString(w, fmt.Sprintf("%s\n", f.Name()))
+		// io.WriteString(w, f.Name()+"\n")
 	}
 }
 
 func main() {
+	config = Config{
+		Host:   getEnv("HOST", "localhost"),
+		Port:   getEnv("PORT", "8000"),
+		Folder: getEnv("FOLDER", "files"),
+	}
 	log.Printf("%+v\n", config)
 
-	os.RemoveAll(config.Folder) // delete files for testing purposes
+	os.RemoveAll(config.Folder) // Delete files for testing purposes
 
-	// setup directory for storing files
+	// Setup directory for storing files
 	err := os.MkdirAll(config.Folder, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
@@ -123,6 +131,6 @@ func main() {
 	http.HandleFunc("/upload", uploadHandler)
 	http.HandleFunc("/", readHandler)
 
-	log.Println("Listing for requests at http://localhost:8000/")
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	log.Printf("Listing for requests at http://%s:%s/", config.Host, config.Port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", config.Host), nil))
 }
