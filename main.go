@@ -16,10 +16,6 @@ type Config struct {
 	Folder string
 }
 
-var config Config
-
-var fs *FileStore
-
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		log.Println(exists)
@@ -28,8 +24,8 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func get_filename() string {
-	// TODO: write own unique id filename algorithm
+func generate_filename() string {
+	// TODO: write own unique id filename algorithm and remove dependency on shortid
 	id, _ := shortid.Generate()
 	return id
 }
@@ -42,7 +38,7 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	defer file.Close()
 
-	filename := get_filename()
+	filename := generate_filename()
 
 	err = fs.PutFile(filename, file)
 	if err != nil {
@@ -64,6 +60,9 @@ func readHandler(w http.ResponseWriter, req *http.Request) {
 
 	w.Write(file)
 }
+
+var config Config
+var fs *FileStore
 
 func main() {
 	// Load config

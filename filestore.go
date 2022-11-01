@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 )
@@ -22,37 +20,45 @@ func NewFileStore(path string) *FileStore {
 	return fs
 }
 
-func (fs *FileStore) PutFile(name string, file multipart.File) error {
-	path := filepath.Join(fs.Folder, name)
-	dst, err := os.Create(path)
+func (fs *FileStore) PutFile(filename string, file io.Reader) error {
+
+	dst, err := os.Create(filepath.Join(fs.Folder, filename))
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	defer dst.Close()
+
 	_, err = io.Copy(dst, file)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
+
+	log.Printf("created file with filename=%s", filename)
 	return nil
 }
 
-func (fs *FileStore) GetFile(name string) ([]byte, error) {
-	log.Println(fs.Folder)
-	path := filepath.Join(fs.Folder, name)
-	log.Println(path)
-	file, err := os.ReadFile(path)
+func (fs *FileStore) GetFile(filename string) ([]byte, error) {
+
+	file, err := os.ReadFile(filepath.Join(fs.Folder, filename))
 	if err != nil {
-		return nil, fmt.Errorf("file with name=%s not found", name)
+		log.Println(err)
+		return nil, err
 	}
 
+	log.Printf("read file with filename=%s", filename)
 	return file, nil
 }
 
-func (fs *FileStore) DeleteFile(name string) error {
-	path := filepath.Join(fs.Folder, name)
-	err := os.Remove(path)
+func (fs *FileStore) DeleteFile(filename string) error {
+
+	err := os.Remove(filepath.Join(fs.Folder, filename))
 	if err != nil {
+		log.Println(err)
 		return err
 	}
+
+	log.Printf("removed file with filename=%s", filename)
 	return nil
 }
