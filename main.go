@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/teris-io/shortid"
 )
@@ -18,6 +17,8 @@ type Config struct {
 }
 
 var config Config
+
+var fs *FileStore
 
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
@@ -34,8 +35,6 @@ func get_filename() string {
 }
 
 func uploadHandler(w http.ResponseWriter, req *http.Request) {
-
-	// Get file from request
 	file, _, err := req.FormFile("file")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -43,39 +42,27 @@ func uploadHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	defer file.Close()
 
-	// Get unique filename
 	filename := get_filename()
 
-	// Create new file and write file contents
-	dst, err := os.Create(filepath.Join(config.Folder, filename))
+	err = fs.PutFile(filename, file)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer dst.Close()
 
-	if _, err = io.Copy(dst, file); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Return url to access file
 	io.WriteString(w, fmt.Sprintf("http://%s:%s/%s\n", config.Host, config.Port, filename))
 }
 
 func readHandler(w http.ResponseWriter, req *http.Request) {
-	// Read filename from path
 	filename := req.URL.Path[1:]
 
-	// Read file
-	dat, err := os.ReadFile(filepath.Join(config.Folder, filename))
+	file, err := fs.GetFile(filename)
 	if err != nil {
 		http.Error(w, "404 - not found", http.StatusNotFound)
 		return
 	}
 
-	// Return file content
-	w.Write(dat)
+	w.Write(file)
 }
 
 func main() {
@@ -85,13 +72,8 @@ func main() {
 		Port:   getEnv("PORT", "8000"),
 		Folder: getEnv("FOLDER", "files"),
 	}
-	log.Printf("%+v\n", config)
 
-	// Setup directory for storing files
-	err := os.MkdirAll(config.Folder, os.ModePerm)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fs = NewFileStore(config.Folder)
 
 	http.HandleFunc("/upload", uploadHandler)
 	http.HandleFunc("/", readHandler)
